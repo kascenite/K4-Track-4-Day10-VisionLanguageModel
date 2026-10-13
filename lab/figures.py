@@ -50,7 +50,7 @@ def pred_vs_gt(key):
         ax.axis("off")
     fig.suptitle(f"{key.upper()} trên test: xanh lá = GT, màu theo lớp = dự đoán")
     plt.tight_layout()
-    plt.savefig(OUT / f"{key}_pred_vs_gt.png", dpi=80)
+    plt.savefig(OUT / f"{key.replace('/', '_')}_pred_vs_gt.png", dpi=80)
 
 
 if __name__ == "__main__":
