@@ -85,7 +85,8 @@ def evaluate(key, name, run_dir, splits):
 
 
 def f1(key):
-    return json.loads((EV / f"{key}.json").read_text())["micro"]["f1"]
+    p = EV / f"{key}.json"
+    return json.loads(p.read_text())["micro"]["f1"] if p.exists() else -1.0
 
 
 def e4(splits):
