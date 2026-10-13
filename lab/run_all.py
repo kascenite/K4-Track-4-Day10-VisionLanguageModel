@@ -88,26 +88,30 @@ def f1(key):
     return json.loads((EV / f"{key}.json").read_text())["micro"]["f1"]
 
 
+def e4(splits):
+    best = max(SETUPS, key=f1)
+    log("best setup:", best, {k: f1(k) for k in SETUPS})
+    sub = random.Random(42).sample(splits["train"], int(0.1 * len(splits["train"])))
+    key = "e4_data_size_0.1"
+    evaluate(key, f"E4 data_size=0.1 ({best.upper()})", run(key, SETUPS[best], sub), splits)
+    full = EV / "e4_data_size_1.0.json"
+    if not full.exists():
+        d = json.loads((EV / f"{best}.json").read_text())
+        d["name"] = f"E4 data_size=1.0 ({best.upper()})"
+        full.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+
+
 def main():
     EV.mkdir(parents=True, exist_ok=True)
     splits = {s: V.load_split(s) for s in ("train", "val", "test")}
-    only = sys.argv[1:]  # vd: python -m lab.run_all e0 e1
-    if not only or "e0" in only:
-        step_e0(splits)
-    for key, name in (("e1", "E1"), ("e2", "E2"), ("e3", "E3")):
-        if not only or key in only:
-            evaluate(key, name, run(key, SETUPS[key], splits["train"]), splits)
-    if not only or "e4" in only:
-        best = max(SETUPS, key=f1)
-        log("best setup:", best, {k: f1(k) for k in SETUPS})
-        sub = random.Random(42).sample(splits["train"], int(0.1 * len(splits["train"])))
-        key = "e4_data_size_0.1"
-        evaluate(key, f"E4 data_size=0.1 ({best.upper()})", run(key, SETUPS[best], sub), splits)
-        full = EV / "e4_data_size_1.0.json"
-        if not full.exists():
-            d = json.loads((EV / f"{best}.json").read_text())
-            d["name"] = f"E4 data_size=1.0 ({best.upper()})"
-            full.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    steps = sys.argv[1:] or ["e0", "e1", "e2", "e3", "e4"]  # chạy theo đúng thứ tự tham số
+    for key in steps:
+        if key == "e0":
+            step_e0(splits)
+        elif key in SETUPS:
+            evaluate(key, key.upper(), run(key, SETUPS[key], splits["train"]), splits)
+        elif key == "e4":
+            e4(splits)
     shutil.copytree(EV, ROOT / "report" / "evidence", dirs_exist_ok=True)
     log("DONE")
 

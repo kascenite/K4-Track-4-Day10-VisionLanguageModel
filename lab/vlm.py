@@ -70,9 +70,13 @@ def load_model(model_id=MODEL_ID):
     from transformers import AutoProcessor, BitsAndBytesConfig, Qwen3VLForConditionalGeneration
     q = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                            bnb_4bit_compute_dtype=torch.float16, bnb_4bit_use_double_quant=True,
-                           llm_int8_skip_modules=["visual", "lm_head"])
+                           # transformers 5.x so khớp tên từ ĐẦU (re.match) hoặc hậu tố: "visual" không
+                           # khớp "model.visual.blocks.0...", phải dùng "model.visual" (prefix + ".")
+                           llm_int8_skip_modules=["model.visual", "lm_head"])
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_id, quantization_config=q, dtype=torch.float16, device_map={"": 0})
+    q4 = [n for n, m in model.named_modules() if "visual" in n and type(m).__name__ == "Linear4bit"]
+    assert not q4, f"ViT bị lượng tử hoá 4-bit: {q4[:3]}"
     processor = AutoProcessor.from_pretrained(model_id)
     processor.tokenizer.padding_side = "left"
     return model, processor
