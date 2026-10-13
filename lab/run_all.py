@@ -43,9 +43,9 @@ def step_e0(splits):
     model, proc = V.load_model()
     log("modules:", [n for n, _ in model.named_modules()
                      if n.endswith(("layers.0.self_attn.q_proj", "blocks.0.attn.qkv", "visual.merger"))])
-    V.predict(model, proc, splits["val"][:40], WORK / "e0_val40.jsonl")
+    V.predict(model, proc, splits["val"][:40], WORK / "e0_val40.jsonl", batch_size=16)
     score(WORK / "e0_val40.jsonl", "E0-val40", WORK / "e0_val40.json", split="val")
-    V.predict(model, proc, splits["test"], WORK / "e0.jsonl")
+    V.predict(model, proc, splits["test"], WORK / "e0.jsonl", batch_size=16)
     score(WORK / "e0.jsonl", "E0", EV / "e0.json")
     for r in V.read_jsonl(WORK / "e0.jsonl")[:5]:
         log("RAW", repr(r["raw"][:300]))
@@ -78,7 +78,7 @@ def evaluate(key, name, run_dir, splits):
     if (EV / f"{key}.json").exists():
         return
     pm, proc = V.load_trained(run_dir)
-    V.predict(pm, proc, splits["test"], WORK / f"{key}.jsonl")
+    V.predict(pm, proc, splits["test"], WORK / f"{key}.jsonl", batch_size=16)
     del pm
     free()
     score(WORK / f"{key}.jsonl", name, EV / f"{key}.json", meta=V.meta_args(run_dir))

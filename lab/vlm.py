@@ -189,7 +189,8 @@ def projector_state(pm):
 # ---------- Bước 6: huấn luyện ----------
 
 def train(pm, processor, entries, out_dir, train_projector, coord="norm1000", lr=2e-4,
-          batch_size=2, grad_accum=4, max_steps=300, seed=42, save_every=100, log_every=10):
+          batch_size=2, grad_accum=4, max_steps=300, seed=42, save_every=100, log_every=10,
+          grad_ckpt=False):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     random.seed(seed)
@@ -198,9 +199,26 @@ def train(pm, processor, entries, out_dir, train_projector, coord="norm1000", lr
     pad_id = processor.tokenizer.pad_token_id
     prompt = prompt_for(coord)
     pm.config.use_cache = False
-    pm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     pm.train()
     params = [p for p in pm.parameters() if p.requires_grad]
+    if not grad_ckpt:  # thử batch nặng nhất (nhiều box nhất) không checkpointing; OOM thì bật lại
+        worst = sorted(entries, key=lambda e: -len(e["objects"]))[:batch_size]
+        exs = [encode_example(processor, load_image(e), prompt, objects_to_answer(e["objects"], coord))
+               for e in worst]
+        try:
+            with torch.autocast("cuda", dtype=torch.float16):
+                pm(**{k: v.to("cuda") for k, v in collate(exs, pad_id).items()}).loss.backward()
+            # + trạng thái AdamW (2 bản fp32) chưa cấp phát lúc thử; giữ 10% dự phòng
+            need = torch.cuda.max_memory_allocated() + 2 * sum(p.numel() * 4 for p in params)
+            grad_ckpt = need > 0.9 * torch.cuda.get_device_properties(0).total_memory
+        except torch.OutOfMemoryError:
+            grad_ckpt = True
+        for p in params:
+            p.grad = None
+        torch.cuda.empty_cache()
+    if grad_ckpt:
+        pm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+    print("gradient checkpointing:", grad_ckpt, flush=True)
     opt = torch.optim.AdamW(params, lr=lr, weight_decay=0.0)
     warm = max(1, int(0.05 * max_steps))
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: (s + 1) / warm if s < warm else
@@ -249,7 +267,7 @@ def train(pm, processor, entries, out_dir, train_projector, coord="norm1000", lr
     run = {"trainable_params": sum(p.numel() for p in params),
            "peak_vram_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2),
            "train_minutes": round((time.time() - t0) / 60, 1),
-           "losses": losses}
+           "grad_ckpt": grad_ckpt, "losses": losses}
     (out_dir / "run.json").write_text(json.dumps(run))
     return run
 
