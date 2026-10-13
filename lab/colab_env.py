@@ -3,8 +3,10 @@ import os
 
 from google.colab import userdata
 
-os.environ["KAGGLE_USERNAME"] = userdata.get("KAGGLE_USERNAME")
-os.environ["KAGGLE_KEY"] = userdata.get("KAGGLE_KEY")
-if os.environ["KAGGLE_KEY"].startswith("KGAT_"):  # token API kiểu mới của Kaggle
-    os.environ["KAGGLE_API_TOKEN"] = os.environ["KAGGLE_KEY"]
-print("kaggle user:", os.environ["KAGGLE_USERNAME"])
+key = userdata.get("KAGGLE_KEY")
+if key.startswith("KGAT_"):  # token API kiểu mới của Kaggle: không cần username
+    os.environ["KAGGLE_API_TOKEN"] = key
+else:
+    os.environ["KAGGLE_USERNAME"] = userdata.get("KAGGLE_USERNAME")
+    os.environ["KAGGLE_KEY"] = key
+print("kaggle credentials set")
