@@ -55,24 +55,30 @@ Các ảnh là frame cắt từ video, nên hai frame liền nhau gần như tr�
 Phân bố lệch, ví dụ val chỉ có 66 pothole, nên phải đọc F1 theo từng lớp.
 
 ### Câu 7 — So sánh E1/E2/E3: mở projector và LoRA trên ViT có đáng không (F1, CI95, VRAM, thời gian)?
-- **E1 → E2:** +109M tham số, VRAM 5,77 → 7,93 GB (+2,2 GB do trọng số fp32 của projector và hai trạng thái AdamW: 109M × 12 byte ≈ 1,3 GB, cộng gradient), thời gian gần như không đổi (55,8 → 55,6 phút). F1 0,253 → 0,357 và CI95 không chồng nhau (0,214–0,295 so với 0,316–0,397). Tuy vậy, như Câu 5 đã nói, chênh lệch này gộp cả việc ViT từ 4-bit thành fp16.
+- **E1 → E2:** +109M tham số, VRAM 5,77 → 7,93 GB (+2,2 GB: trọng số fp32 của projector cùng hai trạng thái AdamW, 109M × 12 byte ≈ 1,3 GB, cộng gradient; khoảng 0,6 GB còn lại là do bản thân ViT chuyển từ 4-bit sang fp16), thời gian gần như không đổi (55,8 → 55,6 phút). F1 0,253 → 0,357 và CI95 không chồng nhau (0,214–0,295 so với 0,316–0,397). Tuy vậy, như Câu 5 đã nói, chênh lệch này gộp cả việc ViT từ 4-bit thành fp16.
 - **E2 → E3:** chỉ +6,3M tham số, nhưng thời gian +17% (65,3 phút) và VRAM 8,10 GB vì gradient phải lan ngược qua 24 block ViT. F1 0,357 → 0,436 (+0,079). Pothole cải thiện nhiều nhất (0,216 → 0,322), FP/ảnh giảm 1,07 → 0,98.
-E3 đáng nhất: gần như cùng VRAM với E2, thêm 10 phút và tăng F1 rõ. Lý do: box nhỏ (trung vị 0,7% khung hình) cần đặc trưng thị giác tốt hơn, và đó là thứ chỉ chỉnh ViT mới làm được.
+E3 có F1 cao nhất với gần như cùng VRAM với E2 và chỉ thêm 10 phút, nên là lựa chọn đáng nhất. Tuy vậy, mức tăng so với E2 nằm sát biên CI (xem Câu 8). Lý do: box nhỏ (trung vị 0,7% khung hình) cần đặc trưng thị giác tốt hơn, và đó là thứ chỉ chỉnh ViT mới làm được.
 
 ### Câu 8 — Tập test có 311 ảnh: khoảng tin cậy rộng thế nào, và điều đó giới hạn kết luận so sánh các setup ra sao?
-CI95 bootstrap theo ảnh rộng khoảng ±0,04 (E3: 0,393–0,480, rộng 0,087; E2: 0,316–0,397, rộng 0,081). E2 và E3 chỉ cách nhau một khe rất hẹp (0,393 so với 0,397), tức hai khoảng gần như chạm nhau. Hai CI được tính riêng trên cùng một tập ảnh, không phải kiểm định ghép cặp. Vì vậy "E3 > E2" chỉ ở mức gợi ý mạnh chứ chưa chắc chắn, và cần bootstrap ghép cặp (cùng mẫu ảnh cho cả hai model) để kết luận. E0 → E1 → E2 thì tách hẳn nhau. Test chỉ có 3 phiên quay, nên cả CI cũng đánh giá thấp độ bất định thật khi chuyển sang con đường hay điều kiện ánh sáng khác. Mọi kết luận chỉ có giá trị cho đúng 3 phiên này.
+CI95 bootstrap theo ảnh rộng khoảng ±0,04 (E3: 0,393–0,480, rộng 0,087; E2: 0,316–0,397, rộng 0,081). Hai khoảng của E2 và E3 **chồng lên nhau** một đoạn 0,393–0,397. Hai CI được tính riêng trên cùng một tập ảnh, không phải kiểm định ghép cặp, nên riêng chúng **không đủ để khẳng định E3 > E2**. Cần bootstrap ghép cặp (lấy lại cùng tập ảnh cho cả hai model rồi xem phân phối hiệu F1) mới kết luận được. E0, E1 và E2 thì tách hẳn nhau (CI không chồng). Test chỉ có 3 phiên quay, nên CI cũng đánh giá thấp độ bất định thật khi chuyển sang con đường hay điều kiện ánh sáng khác. Mọi kết luận chỉ có giá trị cho đúng 3 phiên này.
 
 ### Câu 9 — Phân tích lỗi theo lớp: lớp nào kém nhất và vì sao (kích thước box, số mẫu, ngữ nghĩa)? Kèm ảnh minh hoạ.
 Ở E3, **pothole** có F1 thấp nhất (0,322: TP 33, FP 51, FN 88), sau đó là **crack** (0,353: TP 111, FP 219, FN 188). Manhole tốt nhất (0,687: TP 103, FP 34, FN 60).
 - Manhole có hình dạng rõ (tròn hoặc chữ nhật, màu kim loại) và ranh giới sắc, nên box dễ đạt IoU ≥ 0,5.
-- Crack là vật thể mảnh, dài, ranh giới mơ hồ. Cùng một vết nứt có thể gán nhãn là một box dài hoặc nhiều box ngắn, nên IoU 0,5 rất khắt khe (219 FP chủ yếu là box lệch hoặc chia khác người gán nhãn).
-- Pothole: train có 1.074 box nhưng hầu hết từ vài phiên. Ổ gà nhỏ, xa camera và trông giống mảng vá, vũng nước hay bóng râm, nên model bỏ sót nhiều (FN 88/121).
+- Crack là vật thể mảnh, dài, ranh giới mơ hồ. Cùng một vết nứt có thể gán nhãn là một box dài hoặc nhiều box ngắn, nên IoU 0,5 rất khắt khe. Giả thuyết của tôi (chưa đo tách riêng) là phần lớn trong 219 FP là box lệch hoặc chia khác người gán nhãn, chứ không phải bịa hoàn toàn.
+- Pothole: train có 1.074 box, nhưng có lẽ tập trung ở một số phiên (giả thuyết, chưa kiểm tra theo phiên). Ổ gà nhỏ, xa camera và trông giống mảng vá, vũng nước hay bóng râm, nên model bỏ sót nhiều (FN 88/121).
 Ảnh minh hoạ: `report/figures/e3_pred_vs_gt.png` và `e2_pred_vs_gt.png` (8 ảnh test, xanh lá = GT, màu theo lớp = dự đoán: đỏ pothole, vàng crack, lục lam manhole), `vit4bit_e0_pred_vs_gt.png` (zero-shot) và `train_samples.png` (nhãn train).
 
 ![E3 trên test](report/figures/e3_pred_vs_gt.png)
 
 ### Câu 10 — E4: bạn đổi biến nào, kết quả thế nào, và kết luận có đáng tin không?
 Biến được chọn: `data_size`, so 10% (142 ảnh, `random.Random(42).sample`) với 100% ảnh train, trên setup tốt nhất là E3. Mọi thứ khác giữ nguyên, kể cả 300 bước tối ưu, nên bản 10% xem mỗi ảnh khoảng 17 lần thay vì khoảng 1,7 lần. Giá trị 1,0 chính là E3 (F1 0,436, CI95 0,393–0,480), lưu lại dưới tên `report/evidence/e4_data_size_1.0.json` (bản sao của `e3.json`, chỉ đổi `name`). **Bản 10% chưa chạy xong** vì Colab free hết quota GPU. Mã đã sẵn sàng (`python -m lab.run_all e4`) và kết quả sẽ được bổ sung vào `report/evidence/e4_data_size_*.json` cùng bảng ở trên.
+
+## E5 (tuỳ chọn): hàm reward IoU
+
+- Hàm reward: `lab/reward.py`, đúng công thức của GUIDE bước 9 (0 nếu JSON hỏng; 1 nếu cả GT và dự đoán đều rỗng; ngoài ra 0,2 + 0,8·ΣIoU / max(n_gt, n_pred, 1), ghép tham lam cùng lớp với IoU ≥ 0,5, dùng `scripts.score.parse_output` và `iou_xyxy`).
+- Test (Python thuần, không cần GPU): `python -m pytest -q lab/test_reward.py` cho kết quả **7 passed**. Các trường hợp: hoàn hảo (= 1,0), JSON hỏng (= 0), sai lớp (= 0,2), thừa box bị phạt qua mẫu số, rỗng (cả 3 tổ hợp), một box khổng lồ không được thưởng (chống reward hacking), IoU một phần và JSON bọc ```json.
+- **GRPO chưa chạy** vì hết quota GPU.
 
 ## Nhìn lại
 

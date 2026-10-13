@@ -67,7 +67,7 @@ def run(key, setup, entries, r=16):
         model, proc = V.load_model()
         pm, n_matched, n_train = V.apply_setup(model, r=r, alpha=2 * r, **setup)
         log(key, "matched", n_matched, "trainable", n_train)
-        res = V.train(pm, proc, entries, run_dir, setup["train_projector"])
+        res = V.train(pm, proc, entries, run_dir, setup["train_projector"], grad_ckpt=True)  # như E1–E3: tài nguyên so sánh được
         log(key, {k: v for k, v in res.items() if k != "losses"})
         del model, pm
         free()
