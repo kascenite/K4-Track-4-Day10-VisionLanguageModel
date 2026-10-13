@@ -205,6 +205,7 @@ def train(pm, processor, entries, out_dir, train_projector, coord="norm1000", lr
         worst = sorted(entries, key=lambda e: -len(e["objects"]))[:batch_size]
         exs = [encode_example(processor, load_image(e), prompt, objects_to_answer(e["objects"], coord))
                for e in worst]
+        torch.cuda.reset_peak_memory_stats()
         try:
             with torch.autocast("cuda", dtype=torch.float16):
                 pm(**{k: v.to("cuda") for k, v in collate(exs, pad_id).items()}).loss.backward()
