@@ -1,0 +1,63 @@
+{
+  "n_images": 311,
+  "parse_valid_rate": 1.0,
+  "missing_predictions": 0,
+  "micro": {
+    "precision": 0.45207956600361665,
+    "recall": 0.4288164665523156,
+    "f1": 0.4401408450704225,
+    "tp": 250,
+    "fp": 303,
+    "fn": 333
+  },
+  "per_class": {
+    "pothole": {
+      "precision": 0.3619047619047619,
+      "recall": 0.3140495867768595,
+      "f1": 0.336283185840708,
+      "tp": 38,
+      "fp": 67,
+      "fn": 83
+    },
+    "crack": {
+      "precision": 0.34201954397394135,
+      "recall": 0.3511705685618729,
+      "f1": 0.34653465346534656,
+      "tp": 105,
+      "fp": 202,
+      "fn": 194
+    },
+    "manhole": {
+      "precision": 0.7588652482269503,
+      "recall": 0.656441717791411,
+      "f1": 0.7039473684210525,
+      "tp": 107,
+      "fp": 34,
+      "fn": 56
+    },
+    "other": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    }
+  },
+  "mean_iou": 0.6923935135957484,
+  "fp_per_image": 0.9742765273311897,
+  "f1_ci95": [
+    0.3992740471869328,
+    0.48275862068965514
+  ],
+  "score_version": 1,
+  "name": "E3 (huấn luyện lại, điểm xuất phát của E5)",
+  "dataset_version": "d10-21e4070301",
+  "split": "test",
+  "coord": "norm1000",
+  "meta": {
+    "trainable_params": 148426752,
+    "peak_vram_gb": 8.08,
+    "train_minutes": 57.9
+  }
+}

@@ -1,0 +1,68 @@
+[
+ {
+  "steps": "0-9",
+  "n": 80,
+  "reward": 0.4844,
+  "parse_rate": 0.925,
+  "empty_rate": 0.0,
+  "gt_empty_rate": 0.0,
+  "n_pred": 1.76,
+  "n_gt": 2.3,
+  "big_box_rate": 0.0
+ },
+ {
+  "steps": "10-19",
+  "n": 80,
+  "reward": 0.3842,
+  "parse_rate": 0.95,
+  "empty_rate": 0.0,
+  "gt_empty_rate": 0.0,
+  "n_pred": 1.92,
+  "n_gt": 2.4,
+  "big_box_rate": 0.013
+ },
+ {
+  "steps": "20-29",
+  "n": 80,
+  "reward": 0.4469,
+  "parse_rate": 0.975,
+  "empty_rate": 0.0,
+  "gt_empty_rate": 0.0,
+  "n_pred": 1.76,
+  "n_gt": 2.15,
+  "big_box_rate": 0.013
+ },
+ {
+  "steps": "30-39",
+  "n": 80,
+  "reward": 0.4049,
+  "parse_rate": 0.963,
+  "empty_rate": 0.0,
+  "gt_empty_rate": 0.0,
+  "n_pred": 1.68,
+  "n_gt": 2.1,
+  "big_box_rate": 0.0
+ },
+ {
+  "steps": "40-49",
+  "n": 80,
+  "reward": 0.3737,
+  "parse_rate": 0.95,
+  "empty_rate": 0.0,
+  "gt_empty_rate": 0.0,
+  "n_pred": 1.92,
+  "n_gt": 2.45,
+  "big_box_rate": 0.0
+ },
+ {
+  "steps": "50-59",
+  "n": 80,
+  "reward": 0.4111,
+  "parse_rate": 0.988,
+  "empty_rate": 0.0,
+  "gt_empty_rate": 0.0,
+  "n_pred": 2.05,
+  "n_gt": 2.8,
+  "big_box_rate": 0.0
+ }
+]

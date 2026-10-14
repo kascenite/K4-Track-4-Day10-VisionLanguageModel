@@ -86,7 +86,23 @@ Bớt 90% dữ liệu làm F1 giảm 0,119, và hai CI tách hẳn nhau (0,352 <
 
 - Hàm reward: `lab/reward.py`, đúng công thức của GUIDE bước 9 (0 nếu JSON hỏng; 1 nếu cả GT và dự đoán đều rỗng; ngoài ra 0,2 + 0,8·ΣIoU / max(n_gt, n_pred, 1), ghép tham lam cùng lớp với IoU ≥ 0,5, dùng `scripts.score.parse_output` và `iou_xyxy`).
 - Test (Python thuần, không cần GPU): `python -m pytest -q lab/test_reward.py` cho kết quả **7 passed**. Các trường hợp: hoàn hảo (= 1,0), JSON hỏng (= 0), sai lớp (= 0,2), thừa box bị phạt qua mẫu số, rỗng (cả 3 tổ hợp), một box khổng lồ không được thưởng (chống reward hacking), IoU một phần và JSON bọc ```json.
-- **GRPO chưa chạy** (phần tuỳ chọn, ưu tiên GPU cho E0–E4).
+- **GRPO đã chạy** (`lab/grpo.py`, `trl.GRPOTrainer`, trl 1.9.2): khởi tạo từ adapter E3, `num_generations=4`, `max_completion_length=128`, 60 bước, `beta=0`, `use_vllm=False`, mỗi bước 2 ảnh × 4 completion. Chỉ LoRA được cập nhật (39,3M tham số); projector nạp lại từ E3 và đóng băng. Adapter E3 gốc không còn, nên tôi huấn luyện lại E3 cùng cấu hình trên Kaggle (57,9 phút) và dùng bản này làm điểm xuất phát. Hai lần chạy: `lr=5e-6` đúng đề (`configs/e5.yaml`) và `lr=5e-5` để đối chứng, vì với lr 5e-6 LoRA có thể gần như không đổi trong 60 bước.
+
+| Run | F1 | CI95 | P | R | FP/ảnh | parse_valid | phút |
+|---|---|---|---|---|---|---|---|
+| E3 gốc (Colab) | 0,436 | 0,393–0,480 | 0,448 | 0,424 | 0,98 | 1,00 | 65,3 |
+| E3 huấn luyện lại (điểm xuất phát) | 0,440 | 0,399–0,483 | 0,452 | 0,429 | 0,97 | 1,00 | 57,9 |
+| **E5 GRPO lr=5e-6** | 0,437 | 0,396–0,480 | 0,473 | 0,407 | 0,85 | 1,00 | 30,2 |
+| E5 GRPO lr=5e-5 | 0,432 | 0,388–0,471 | 0,483 | 0,391 | 0,78 | 1,00 | 25,2 |
+
+**Có reward hacking không?** Không có dạng suy biến mà đề nêu. Log từng completion nằm ở `report/evidence/extra/e5_rollouts.jsonl` và tổng hợp theo cửa sổ 10 bước ở `e5_hacking.json`:
+- Trả `[]`: 0% ở mọi cửa sổ, cả hai lần chạy (120 ảnh được lấy mẫu đều có ít nhất một GT, nên `[]` chỉ nhận 0,2 chứ không phải 1,0).
+- Box khổng lồ (box lớn hơn 50% diện tích ảnh): tối đa 1,3% (lr 5e-6) và 3,9% (lr 5e-5) ở một cửa sổ, rồi về 0%. Công thức reward đã phạt box này (không khớp GT thì IoU < 0,5, và mẫu số tăng).
+- JSON hỏng: tỉ lệ parse hợp lệ lúc rollout 92,5% → 98,8% (lr 5e-6) và 97,5% → 100% (lr 5e-5), tức model học thêm cách giữ định dạng.
+
+Tuy nhiên có một dấu hiệu nhẹ theo hướng "ăn gian bằng cách thận trọng": số box dự đoán mỗi ảnh luôn thấp hơn số GT (khoảng 1,3–2,05 so với 2,1–2,8). Trên test, FP/ảnh giảm 0,97 → 0,85 → 0,78 theo lr, precision tăng 0,452 → 0,473 → 0,483, nhưng recall giảm 0,429 → 0,407 → 0,391. Reward phạt box bịa qua mẫu số, nên model dịch về phía bỏ bớt box khó. Vì precision tăng bù recall, F1 gần như đứng yên.
+
+**So với SFT:** F1 đổi từ 0,440 (E3 huấn luyện lại) xuống 0,437 (lr 5e-6) và 0,432 (lr 5e-5). Chênh lệch tối đa 0,008, trong khi CI95 rộng khoảng ±0,04 và hai CI gần như trùng hoàn toàn, nên **không vượt CI95 và không kết luận được GRPO tốt hơn hay kém hơn SFT**. Reward trung bình theo cửa sổ không có xu hướng tăng rõ (0,484 → 0,411 với lr 5e-6; 0,458 → 0,495 với lr 5e-5), vì mỗi cửa sổ gồm các ảnh khác nhau và chỉ có 60 bước với 120 ảnh. Giới hạn: một seed mỗi lần chạy, và tôi không có dự đoán từng ảnh trên máy này nên chưa làm bootstrap ghép cặp.
 
 ## Nhìn lại
 
