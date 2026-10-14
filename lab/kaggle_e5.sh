@@ -2,6 +2,7 @@
 # Kaggle "Save & Run All" cho E5: GPU0 train E3 rồi GRPO lr=5e-6 (đúng đề); GPU1 chờ E3, đo E3 nền, rồi GRPO lr=5e-5 (đối chứng).
 # SMOKE=1 chỉ chạy thử nhanh (2 bước) để bắt lỗi.
 cd "$(dirname "$0")/.." || exit 1
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 bash lab/kaggle_setup.sh
 pip uninstall -y -q torchao 2>/dev/null
 if [ -n "$SMOKE" ]; then

@@ -111,7 +111,7 @@ def grpo(base_dir, out_dir, entries, lr, max_steps, n_prompts):
         output_dir=str(out_dir / "trainer"), num_generations=4, max_completion_length=128,
         max_steps=max_steps, learning_rate=lr, beta=0.0, use_vllm=False,
         per_device_train_batch_size=2, gradient_accumulation_steps=4,  # 8 completion/bước = 2 ảnh x 4
-        fp16=True, bf16=False, gradient_checkpointing=False, logging_steps=1, save_strategy="no",
+        fp16=True, bf16=False, gradient_checkpointing=True, logging_steps=1, save_strategy="no",
         report_to="none", seed=42, lr_scheduler_type="constant", warmup_steps=0)
     trainer = GRPOTrainer(model=pm, reward_funcs=make_reward(rollouts), args=cfg,
                           train_dataset=make_dataset(sample), processing_class=proc)
