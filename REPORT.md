@@ -1,4 +1,4 @@
-Họ tên: <điền họ tên>
+Họ tên: Lương Sỹ Khánh
 `dataset_version`: d10-21e4070301
 
 > **Lưu ý trung thực về số liệu.** E0 và E1 trong bảng được chạy khi ViT (kể cả projector) **vô tình bị lượng tử hoá 4-bit**. Lỗi này phát hiện được ở E2 (xem Câu 5). E2 và E3 chạy với ViT fp16 đúng như đề. Bản chạy lại E0/E1 với ViT fp16 và E4 chưa xong vì Colab hết quota GPU. Các ô "chờ" sẽ được cập nhật khi chạy xong.
